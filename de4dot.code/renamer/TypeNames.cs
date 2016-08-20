@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2014 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 
 namespace de4dot.code.renamer {
-	abstract class TypeNames {
+	public abstract class TypeNames {
 		protected Dictionary<string, NameCreator> typeNames = new Dictionary<string, NameCreator>(StringComparer.Ordinal);
 		protected NameCreator genericParamNameCreator = new NameCreator("gparam_");
 		protected NameCreator fnPtrNameCreator = new NameCreator("fnptr_");
@@ -113,6 +113,8 @@ namespace de4dot.code.renamer {
 		protected abstract string FixName(string prefix, string name);
 
 		public virtual TypeNames Merge(TypeNames other) {
+			if (this == other)
+				return this;
 			foreach (var pair in other.typeNames) {
 				NameCreator nc;
 				if (typeNames.TryGetValue(pair.Key, out nc))
@@ -133,7 +135,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-	class VariableNameCreator : TypeNames {
+	public class VariableNameCreator : TypeNames {
 		static Dictionary<string, string> ourFullNameToShortName;
 		static Dictionary<string, string> ourFullNameToShortNamePrefix;
 		static VariableNameCreator() {
@@ -199,7 +201,7 @@ namespace de4dot.code.renamer {
 		}
 	}
 
-	class PropertyNameCreator : TypeNames {
+	public class PropertyNameCreator : TypeNames {
 		static Dictionary<string, string> ourFullNameToShortName = new Dictionary<string, string>(StringComparer.Ordinal);
 		static Dictionary<string, string> ourFullNameToShortNamePrefix = new Dictionary<string, string>(StringComparer.Ordinal);
 

@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2014 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -87,7 +87,7 @@ namespace de4dot.code.deobfuscators.ILProtector {
 			methodInfos.Remove(methodId.Value);
 			var methodReader = new MethodReader(module, methodInfo.data, parameters);
 			methodReader.HasDelegateTypeFlag = MethodReaderHasDelegateTypeFlag;
-			methodReader.Read();
+			methodReader.Read(method);
 
 			RestoreMethod(method, methodReader);
 			if (methodReader.DelegateType != null)

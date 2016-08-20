@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2014 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using de4dot.code.renamer.asmmodules;
 
 namespace de4dot.code.renamer {
-	class DerivedFrom {
+	public class DerivedFrom {
 		Dictionary<string, bool> classNames = new Dictionary<string, bool>(StringComparer.Ordinal);
 		Dictionary<MTypeDef, bool> results = new Dictionary<MTypeDef, bool>();
 
@@ -40,6 +40,12 @@ namespace de4dot.code.renamer {
 		}
 
 		public bool Check(MTypeDef type) {
+			return Check(type, 0);
+		}
+
+		public bool Check(MTypeDef type, int recurseCount) {
+			if (recurseCount >= 100)
+				return false;
 			if (results.ContainsKey(type))
 				return results[type];
 
@@ -53,7 +59,7 @@ namespace de4dot.code.renamer {
 					val = false;
 			}
 			else
-				val = Check(type.baseType.typeDef);
+				val = Check(type.baseType.typeDef, recurseCount + 1);
 
 			results[type] = val;
 			return val;

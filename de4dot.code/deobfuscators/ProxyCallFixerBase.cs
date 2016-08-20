@@ -1,5 +1,5 @@
 ﻿/*
-    Copyright (C) 2011-2014 de4dot@gmail.com
+    Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
 
@@ -24,7 +24,7 @@ using dnlib.DotNet.Emit;
 using de4dot.blocks;
 
 namespace de4dot.code.deobfuscators {
-	abstract class ProxyCallFixerBase {
+	public abstract class ProxyCallFixerBase {
 		protected ModuleDefMD module;
 		protected List<MethodDef> delegateCreatorMethods = new List<MethodDef>();
 		protected Dictionary<TypeDef, bool> delegateTypesDict = new Dictionary<TypeDef, bool>();
@@ -155,14 +155,15 @@ namespace de4dot.code.deobfuscators {
 			});
 		}
 
-		protected static bool FixProxyCalls(Dictionary<Block, List<RemoveInfo>> removeInfos) {
+		protected bool FixProxyCalls(MethodDef method, Dictionary<Block, List<RemoveInfo>> removeInfos) {
+			var gpContext = GenericParamContext.Create(method);
 			foreach (var block in removeInfos.Keys) {
 				var list = removeInfos[block];
 				var removeIndexes = new List<int>(list.Count);
 				foreach (var info in list) {
 					if (info.IsCall) {
 						var opcode = info.DelegateInfo.callOpcode;
-						var newInstr = Instruction.Create(opcode, info.DelegateInfo.methodRef);
+						var newInstr = Instruction.Create(opcode, ReResolve(info.DelegateInfo.methodRef, gpContext));
 						block.Replace(info.Index, 1, newInstr);
 					}
 					else
@@ -174,13 +175,19 @@ namespace de4dot.code.deobfuscators {
 
 			return removeInfos.Count > 0;
 		}
+
+		IMethod ReResolve(IMethod method, GenericParamContext gpContext) {
+			if (method.IsMethodSpec || method.IsMemberRef)
+				method = module.ResolveToken(method.MDToken.Raw, gpContext) as IMethod ?? method;
+			return method;
+		}
 	}
 
 	// Fixes proxy calls that call the delegate inline in the code, eg.:
 	//		ldsfld delegate_instance
 	//		...push args...
 	//		call Invoke
-	abstract class ProxyCallFixer1 : ProxyCallFixerBase {
+	public abstract class ProxyCallFixer1 : ProxyCallFixerBase {
 		FieldDefAndDeclaringTypeDict<DelegateInfo> fieldToDelegateInfo = new FieldDefAndDeclaringTypeDict<DelegateInfo>();
 
 		protected ProxyCallFixer1(ModuleDefMD module)
@@ -279,7 +286,7 @@ namespace de4dot.code.deobfuscators {
 				}
 			}
 
-			return FixProxyCalls(removeInfos);
+			return FixProxyCalls(blocks.Method, removeInfos);
 		}
 
 		protected virtual BlockInstr FindProxyCall(DelegateInfo di, Block block, int index) {
@@ -368,7 +375,7 @@ namespace de4dot.code.deobfuscators {
 	// Invoke() on a delegate instance, eg.:
 	//		...push args...
 	//		call static method
-	abstract class ProxyCallFixer2 : ProxyCallFixerBase {
+	public abstract class ProxyCallFixer2 : ProxyCallFixerBase {
 		MethodDefAndDeclaringTypeDict<DelegateInfo> proxyMethodToDelegateInfo = new MethodDefAndDeclaringTypeDict<DelegateInfo>();
 
 		protected ProxyCallFixer2(ModuleDefMD module)
@@ -481,7 +488,7 @@ namespace de4dot.code.deobfuscators {
 				}
 			}
 
-			return FixProxyCalls(removeInfos);
+			return FixProxyCalls(blocks.Method, removeInfos);
 		}
 	}
 
@@ -490,7 +497,7 @@ namespace de4dot.code.deobfuscators {
 	//		...push args...
 	//		ldsfld delegate instance
 	//		call static method
-	abstract class ProxyCallFixer3 : ProxyCallFixer1 {
+	public abstract class ProxyCallFixer3 : ProxyCallFixer1 {
 		protected ProxyCallFixer3(ModuleDefMD module)
 			: base(module) {
 		}
